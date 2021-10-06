@@ -222,45 +222,6 @@ function ImportJSONViaPost(url, payload, fetchOptions, query, parseOptions) {
   return ImportJSONAdvanced(url, postOptions, query, parseOptions, includeXPath_, defaultTransform_);
 }
 
-/**
- * Parses a JSON text from a named Sheet and returns the results to be inserted into a Google Spreadsheet.
- * The entire target sheet is concatenated into one json string, which is then parsed and handled as normal.
- * 
- * By default, data gets transformed so it looks more like a normal data import. Specifically:
- *
- *   - Data from parent JSON elements gets inherited to their child elements, so rows representing child elements contain the values 
- *      of the rows representing their parent elements.
- *   - Values longer than 256 characters get truncated.
- *   - Headers have slashes converted to spaces, common prefixes removed and the resulting text converted to title case. 
- *
- * To change this behavior, pass in one of these values in the options parameter:
- *
- *    noInherit:     Don't inherit values from parent elements
- *    noTruncate:    Don't truncate values
- *    rawHeaders:    Don't prettify headers
- *    noHeaders:     Don't include headers, only the data
- *    allHeaders:    Include all headers from the query parameter in the order they are listed
- *    debugLocation: Prepend each value with the row & column it belongs in
- *
- * For example:
- *
- *   =ParseJSONFromSheet("Source", "/feed/entry/title,/feed/entry/content",
- *               "noInherit,noTruncate,rawHeaders")
- * 
- * @param {sheetName} the name of the sheet containg the text for the JSON
- * @param {query} a comma-separated lists of paths to import. Any path starting with one of these paths gets imported.
- * @param {options} a comma-separated list of options that alter processing of the data
- *
- * @return a two-dimensional array containing the data, with the first row containing headers
- * @customfunction
- **/
-function ParseJSONFromSheet(sheetName, query, options) {
-
-  var object = getDataFromNamedSheet_(sheetName);
-  
-  return parseJSONObject_(object, query, options, includeXPath_, defaultTransform_);
-}
-
 
 /**
  * Helper function to authenticate with basic auth informations using ImportJSONAdvanced.
@@ -338,6 +299,46 @@ function ImportJSONAdvanced(url, fetchOptions, query, parseOptions, includeFunc,
   var object   = JSON.parse(resp.getContentText());
   
   return parseJSONObject_(object, query, parseOptions, includeFunc, transformFunc);
+}
+
+
+/**
+ * Parses a JSON text from a named Sheet and returns the results to be inserted into a Google Spreadsheet.
+ * The entire target sheet is concatenated into one json string, which is then parsed and handled as normal.
+ * 
+ * By default, data gets transformed so it looks more like a normal data import. Specifically:
+ *
+ *   - Data from parent JSON elements gets inherited to their child elements, so rows representing child elements contain the values 
+ *      of the rows representing their parent elements.
+ *   - Values longer than 256 characters get truncated.
+ *   - Headers have slashes converted to spaces, common prefixes removed and the resulting text converted to title case. 
+ *
+ * To change this behavior, pass in one of these values in the options parameter:
+ *
+ *    noInherit:     Don't inherit values from parent elements
+ *    noTruncate:    Don't truncate values
+ *    rawHeaders:    Don't prettify headers
+ *    noHeaders:     Don't include headers, only the data
+ *    allHeaders:    Include all headers from the query parameter in the order they are listed
+ *    debugLocation: Prepend each value with the row & column it belongs in
+ *
+ * For example:
+ *
+ *   =ParseJSONFromSheet("Source", "/feed/entry/title,/feed/entry/content",
+ *               "noInherit,noTruncate,rawHeaders")
+ * 
+ * @param {sheetName} the name of the sheet containg the text for the JSON
+ * @param {query} a comma-separated lists of paths to import. Any path starting with one of these paths gets imported.
+ * @param {options} a comma-separated list of options that alter processing of the data
+ *
+ * @return a two-dimensional array containing the data, with the first row containing headers
+ * @customfunction
+ **/
+function ParseJSONFromSheet(sheetName, query, options) {
+
+  var object = getDataFromNamedSheet_(sheetName);
+  
+  return parseJSONObject_(object, query, options, includeXPath_, defaultTransform_);
 }
 
 /**
