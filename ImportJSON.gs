@@ -149,13 +149,13 @@ function updateCachedJson() {
  * 
  * @param {url}          the URL to a public JSON feed
  * @param {query}        a comma-separated list of paths to import. Any path starting with one of these paths gets imported.
- * @param {parseOptions} a comma-separated list of options that alter processing of the data
+ * @param {options}      a comma-separated list of options that alter fetching and processing of the data (optional)
  * @customfunction
  *
  * @return a two-dimensional array containing the data, with the first row containing headers
  **/
-function ImportJSON(url, query, parseOptions) {
-  return ImportJSONAdvanced(url, null, query, parseOptions, includeXPath_, defaultTransform_);
+function ImportJSON(url, query, options) {
+  return ImportJSONAdvanced(url, null, query, options, includeXPath_, defaultTransform_);
 }
 
 /**
@@ -184,6 +184,8 @@ function ImportJSON(url, query, parseOptions) {
  *    noHeaders:     Don't include headers, only the data
  *    allHeaders:    Include all headers from the query parameter in the order they are listed
  *    debugLocation: Prepend each value with the row & column it belongs in
+ *    retryFetch:    Retries fetching data from the URL up to ten times
+ *    rawJson:       Returns the raw json data, which can then be parsed with =ParseJSON()
  *
  * For example:
  *
@@ -194,12 +196,12 @@ function ImportJSON(url, query, parseOptions) {
  * @param {payload}      the content to pass with the POST request; usually a URL encoded list of parameters separated by ampersands
  * @param {fetchOptions} a comma-separated list of URLFetchApp key=value options used to retrieve the JSON feed from the URL. Can be used to set content type, (which default to form data)
  * @param {query}        a comma-separated list of paths to import. Any path starting with one of these paths gets imported.
- * @param {parseOptions} a comma-separated list of options that alter processing of the data
+ * @param {options}      a comma-separated list of options that alter fetching and processing of the data (optional)
  * @customfunction
  *
  * @return a two-dimensional array containing the data, with the first row containing headers
  **/
-function ImportJSONViaPost(url, payload, fetchOptions, query, parseOptions) {
+function ImportJSONViaPost(url, payload, fetchOptions, query, options) {
   var postOptions = parseToObject_(fetchOptions);
   
   if (postOptions["method"] == null) {
@@ -219,13 +221,13 @@ function ImportJSONViaPost(url, payload, fetchOptions, query, parseOptions) {
   convertToBool_(postOptions, "followRedirects");
   convertToBool_(postOptions, "muteHttpExceptions");
   
-  return ImportJSONAdvanced(url, postOptions, query, parseOptions, includeXPath_, defaultTransform_);
+  return ImportJSONAdvanced(url, postOptions, query, options, includeXPath_, defaultTransform_);
 }
 
 
 /**
  * Helper function to authenticate with basic auth informations using ImportJSONAdvanced.
- * Basic auth can also be used by adding auth params to the URL
+ * Basic auth can also be used by adding auth params to the URL in =IMPORTJSON().
  *
  * Imports a JSON feed and returns the results to be inserted into a Google Spreadsheet. The JSON feed is flattened to create
  * a two-dimensional array. The first row contains the headers, with each column header indicating the path to that data in
@@ -242,15 +244,15 @@ function ImportJSONViaPost(url, payload, fetchOptions, query, parseOptions) {
  * @param {username}      the Username for authentication
  * @param {password}      the Password for authentication
  * @param {query}         the query passed to the include function (optional)
- * @param {parseOptions}  a comma-separated list of options that may alter processing of the data (optional)
+ * @param {options}       a comma-separated list of options that may alter fetching and processing of the data (optional)
  *
  * @return a two-dimensional array containing the data, with the first row containing headers
  * @customfunction
  **/
-function ImportJSONBasicAuth(url, username, password, query, parseOptions) {
+function ImportJSONBasicAuth(url, username, password, query, options) {
   var encodedAuthInformation = Utilities.base64Encode(username + ":" + password);
   var header = {headers: {Authorization: "Basic " + encodedAuthInformation}};
-  return ImportJSONAdvanced(url, header, query, parseOptions, includeXPath_, defaultTransform_);
+  return ImportJSONAdvanced(url, header, query, options, includeXPath_, defaultTransform_);
 }
 
 
@@ -284,7 +286,7 @@ function ImportJSONBasicAuth(url, username, password, query, parseOptions) {
  * @param {url}           the URL to a public JSON feed
  * @param {fetchOptions}  an object whose properties are URLFetchApp options used to retrieve the JSON feed from the URL
  * @param {query}         the query passed to the include function
- * @param {parseOptions}  a comma-separated list of options that may alter processing of the data
+ * @param {options}       a comma-separated list of options that may alter fetching and processing of the data
  * @param {includeFunc}   a function with the signature func(query, path, options) that returns true if the data element at the given path
  *                        should be included or false otherwise. 
  * @param {transformFunc} a function with the signature func(data, row, column, options) where data is a 2-dimensional array of the data 
@@ -294,11 +296,11 @@ function ImportJSONBasicAuth(url, username, password, query, parseOptions) {
  * @return a two-dimensional array containing the data, with the first row containing headers
  * @customfunction
  **/
-function ImportJSONAdvanced(url, fetchOptions, query, parseOptions, includeFunc, transformFunc) {
-  var resp = FetchUrl_(url, parseOptions, fetchOptions);
+function ImportJSONAdvanced(url, fetchOptions, query, options, includeFunc, transformFunc) {
+  var resp = FetchUrl_(url, options, fetchOptions);
   var object   = JSON.parse(resp.getContentText());
   
-  return parseJSONObject_(object, query, parseOptions, includeFunc, transformFunc);
+  return parseJSONObject_(object, query, options, includeFunc, transformFunc);
 }
 
 
@@ -328,8 +330,8 @@ function ImportJSONAdvanced(url, fetchOptions, query, parseOptions, includeFunc,
  *               "noInherit,noTruncate,rawHeaders")
  * 
  * @param {sheetName} the name of the sheet containg the text for the JSON
- * @param {query} a comma-separated lists of paths to import. Any path starting with one of these paths gets imported.
- * @param {options} a comma-separated list of options that alter processing of the data
+ * @param {query}     a comma-separated list of paths to import. Any path starting with one of these paths gets imported.
+ * @param {options}   a comma-separated list of options that alter processing of the data
  *
  * @return a two-dimensional array containing the data, with the first row containing headers
  * @customfunction
@@ -344,8 +346,8 @@ function ParseJSONFromSheet(sheetName, query, options) {
 /**
  * Gets the json data, handling options and basic auth, and such
  * 
- * @param {url} the url to fetch
- * @param {options} List of options for the function
+ * @param {url}          The url to fetch
+ * @param {options}      List of options for the function
  * @param {fetchOptions} URLFetchApp options (optional)
  * 
  * @return the json data from the URL
