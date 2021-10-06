@@ -115,7 +115,7 @@ function updateCachedJson() {
         }
         // Get JSON and set it
         Logger.log("Updating cell: "+colNum.toString()+","+rowNum.toString()+" with URL: "+urlValue);
-        var jsondata = ImportJSON(urlValue, cacheColumns[colNum], "rawJson,retryFetch,noHeaders");
+        var jsondata = ImportJSON(urlValue, cacheColumns[colNum], "rawJson,retryFetch,noHeaders,noTruncate");
         sheet.getRange(rowNum + 1, colNum + 1).setValue(jsondata);
         Logger.log("Updated cell: "+jsondata);
       }
