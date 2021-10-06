@@ -35,6 +35,82 @@
  *====================================================================================================================================*/
 
 /**
+ * Adds a custom menu to the active spreadsheet, containing a single menu item
+ * for invoking the updateCachedJson() function.
+ * The onOpen() function, when defined, is automatically invoked whenever the
+ * spreadsheet is opened.
+ */
+function onOpen() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet();
+  var entries = [{
+    name : "Update Cached JSON",
+    functionName : "updateCachedJson"
+  }];
+  sheet.addMenu("Script Center Menu", entries);
+};
+
+function getCacheHeaderPath_(value) {
+  var cacheNames = new Array("cached json", "json cache");
+  var valueLower = value.toString().toLowerCase();
+  if (cacheNames.indexOf(valueLower) >= 0) {
+    return "/";
+  }
+  for (var cacheName of cacheNames) {
+    if (valueLower.indexOf(cacheName) == 0) {
+      var path = value.substring(cacheName.length).replace(/^[: ]*/, "");
+      return path;
+    }
+  }
+  return null;
+}
+
+function isCacheHeader_(value) {
+  return (getCacheHeaderPath_(value) !== null)
+}
+
+/**
+ * Finds all columns titled "cached json", then fetches and writes the json from the API URL in the cell to the left of them.
+ * Header title is case insensitive. Possible values are specified in the getCacheHeaderPath_ function.
+ * The header title can be suffixed with an xpath, and then only the specified json paths are saved.
+ */
+function updateCachedJson() {
+  var sheet = SpreadsheetApp.getActiveSheet();
+  var sheetRange = sheet.getDataRange();
+  var numRows = sheetRange.getNumRows();
+  var numColumns = sheetRange.getNumColumns();
+  var values = sheetRange.getValues();
+  var cacheColumns = new Map();  // A map of column indexes, and the json path to cache
+
+  for (var rowNum = 0; rowNum <= numRows - 1; rowNum++) {
+    for (var colNum = 0; colNum <= numColumns - 1; colNum++) {
+      var value = values[rowNum][colNum];
+      // Check for new cache columns
+      var cachePath = getCacheHeaderPath_(value);
+      if (cachePath !== null) {
+        cacheColumns.set(colNum, cachePath);
+        Logger.log("Found header column: "+colNum.toString()+" with path: "+cachePath);
+        continue;
+      }
+
+      // If this is a cache column, update it
+      if (cacheColumns.has(colNum)) {
+        // Get URL, cell to the left
+        var urlValue = values[rowNum][colNum - 1];
+        // Don't update empty URLs
+        if (!urlValue) {
+          continue;
+        }
+        // Get JSON and set it
+        Logger.log("Updating cell: "+colNum.toString()+","+rowNum.toString()+" with URL: "+urlValue);
+        var jsondata = ImportJSON(urlValue, cacheColumns[colNum], "rawJson,retryFetch,noHeaders");
+        sheet.getRange(rowNum + 1, colNum + 1).setValue(jsondata);
+        Logger.log("Updated cell: "+jsondata);
+      }
+    }
+  }
+}
+
+/**
  * Imports a JSON feed and returns the results to be inserted into a Google Spreadsheet. The JSON feed is flattened to create 
  * a two-dimensional array. The first row contains the headers, with each column header indicating the path to that data in 
  * the JSON feed. The remaining rows contain the data. 
