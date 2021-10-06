@@ -243,12 +243,14 @@ function ImportJSONWithPost(url, payload, fetchOptions, query, options) {
  *
  * For example:
  *
- *   ImportJSON("http://gdata.youtube.com/feeds/api/standardfeeds/most_popular?v=2&alt=json", 
- *              new Object() { "method" : "post", "payload" : "user=bob&apikey=xxxx" },
- *              "/feed/entry",
- *              "",
- *              function (query, path) { return path.indexOf(query) == 0; },
- *              function (data, row, column) { data[row][column] = data[row][column].toString().substr(0, 100); } )
+ *   ImportJSONAdvanced(
+ *       "http://gdata.youtube.com/feeds/api/standardfeeds/most_popular?v=2&alt=json",
+ *       new Object() { "method" : "post", "payload" : "user=bob&apikey=xxxx" },
+ *       "/feed/entry",
+ *       "",
+ *       function (query, path) { return path.indexOf(query) == 0; },
+ *       function (data, row, column) { data[row][column] = data[row][column].toString().substr(0, 100); }
+ *   )
  *
  * In this example, the import function checks to see if the path to the data being imported starts with the query. The transform 
  * function takes the data and truncates it. For more robust versions of these functions, see the internal code of this library.
