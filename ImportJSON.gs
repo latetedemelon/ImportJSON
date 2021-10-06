@@ -624,30 +624,34 @@ function applyXPathRule_(rule, path, options) {
  *     of the rows representing their parent elements.
  *   - Values longer than 256 characters get truncated.
  *   - Values in row 0 (headers) have slashes converted to spaces, common prefixes removed and the resulting text converted to title 
-*      case. 
+ *     case. 
  *
  * To change this behavior, pass in one of these values in the options parameter:
  *
- *    noInherit:     Don't inherit values from parent elements
+ *    noInherit:     Don't inherit values from previous element results
  *    noTruncate:    Don't truncate values
  *    rawHeaders:    Don't prettify headers
  *    debugLocation: Prepend each value with the row & column it belongs in
+ *    rawJson:       Dump each value as JSON
  */
 function defaultTransform_(data, row, column, options) {
-  if (data[row][column] === null) {
+  if (data[row][column] == null) {
     if (row < 2 || hasOption_(options, "noInherit")) {
       data[row][column] = "";
     } else {
       data[row][column] = data[row-1][column];
     }
-  } 
+  }
 
   if (!hasOption_(options, "rawHeaders") && row == 0) {
     if (column == 0 && data[row].length > 1) {
       removeCommonPrefixes_(data, row);  
     }
-    
     data[row][column] = toTitleCase_(data[row][column].toString().replace(/[\/\_]/g, " "));
+  }
+
+  if (hasOption_(options, "rawJson") && row > 0 && data[row][column]) {
+    data[row][column] = JSON.stringify(data[row][column]);
   }
   
   if (!hasOption_(options, "noTruncate") && data[row][column]) {
