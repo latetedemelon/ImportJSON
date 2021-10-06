@@ -268,8 +268,13 @@ function ImportJSONWithPost(url, payload, fetchOptions, query, options) {
  * @return a two-dimensional array containing the data, with the first row containing headers
  **/
 function ImportJSONAdvanced(url, fetchOptions, query, options, includeFunc, transformFunc) {
-  var resp = FetchUrl_(url, options, fetchOptions);
-  var object   = JSON.parse(resp.getContentText());
+  var optionsList = new Array();
+  if (options) {
+    optionsList = options.toString().split(",");
+  }
+  var resp = FetchUrl_(url, optionsList, fetchOptions);
+  var jsondata = resp.getContentText();
+  var object   = JSON.parse(jsondata);
   
   return parseJSONObject_(object, query, options, includeFunc, transformFunc);
 }
