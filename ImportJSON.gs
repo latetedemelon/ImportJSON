@@ -12,7 +12,7 @@
   A library for importing JSON feeds into Google spreadsheets. Functions include:
 
      ImportJSON            For use by end users to import a JSON feed from a URL 
-     ImportJSONViaPost     For use by end users to import a JSON feed from a URL using POST parameters
+     ImportJSONWithPost    For use by end users to import a JSON feed from a URL using POST parameters
      ImportJSONAdvanced    For use by script developers to easily extend the functionality of this library
      ParseJSONFromSheet    For use by end users to import JSON from one of the Sheets in the current spreadsheet
   
@@ -25,6 +25,7 @@
   ------------------------------------------------------------------------------------------------------------------------------------
   Changelog:
   
+  1.8.2  (October 6, 2021) Rename ImportJSONViaPost to ImportJSONWithPost
   1.8.1  (October 6, 2021) Remove ImportJSONBasicAuth, as URL can have basic auth info in it, and then use ImportJSON()
   1.8.0  (October 6, 2021) Adding "Update JSON cache" button to menu
   1.7.4  (October 6, 2021) Adding rawJson option
@@ -159,7 +160,7 @@ function ImportJSON(url, query, options) {
 }
 
 /**
- * Imports a JSON feed via a POST request and returns the results to be inserted into a Google Spreadsheet. The JSON feed is 
+ * Imports a JSON feed with a POST request and returns the results to be inserted into a Google Spreadsheet. The JSON feed is 
  * flattened to create a two-dimensional array. The first row contains the headers, with each column header indicating the path to 
  * that data in the JSON feed. The remaining rows contain the data.
  *
@@ -189,7 +190,7 @@ function ImportJSON(url, query, options) {
  *
  * For example:
  *
- *   =ImportJSONViaPost("http://gdata.youtube.com/feeds/api/standardfeeds/most_popular?v=2&alt=json", "user=bob&apikey=xxxx", 
+ *   =ImportJSONWithPost("http://gdata.youtube.com/feeds/api/standardfeeds/most_popular?v=2&alt=json", "user=bob&apikey=xxxx", 
  *               "validateHttpsCertificates=false", "/feed/entry/title,/feed/entry/content", "noInherit,noTruncate,rawHeaders")
  * 
  * @param {url}          the URL to a public JSON feed
@@ -201,7 +202,7 @@ function ImportJSON(url, query, options) {
  *
  * @return a two-dimensional array containing the data, with the first row containing headers
  **/
-function ImportJSONViaPost(url, payload, fetchOptions, query, options) {
+function ImportJSONWithPost(url, payload, fetchOptions, query, options) {
   var postOptions = parseToObject_(fetchOptions);
   
   if (postOptions["method"] == null) {
