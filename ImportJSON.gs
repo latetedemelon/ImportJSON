@@ -138,7 +138,7 @@ function updateCachedJson() {
  *    noTruncate:    Don't truncate values
  *    rawHeaders:    Don't prettify headers
  *    noHeaders:     Don't include headers, only the data
- *    allHeaders:    Include all headers from the query parameter in the order they are listed
+ *    allHeaders:    Include all headers from the query parameter in the order they are listed, even if values are not present
  *    debugLocation: Prepend each value with the row & column it belongs in
  *    retryFetch:    Retries fetching data from the URL up to ten times
  *    rawJson:       Returns the raw json data, which can then be parsed with =ParseJSON()
@@ -183,7 +183,7 @@ function ImportJSON(url, query, options) {
  *    noTruncate:    Don't truncate values
  *    rawHeaders:    Don't prettify headers
  *    noHeaders:     Don't include headers, only the data
- *    allHeaders:    Include all headers from the query parameter in the order they are listed
+ *    allHeaders:    Include all headers from the query parameter in the order they are listed, even if values are not present
  *    debugLocation: Prepend each value with the row & column it belongs in
  *    retryFetch:    Retries fetching data from the URL up to ten times
  *    rawJson:       Returns the raw json data, which can then be parsed with =ParseJSON()
@@ -297,7 +297,7 @@ function ImportJSONAdvanced(url, fetchOptions, query, options, includeFunc, tran
  *    noTruncate:    Don't truncate values
  *    rawHeaders:    Don't prettify headers
  *    noHeaders:     Don't include headers, only the data
- *    allHeaders:    Include all headers from the query parameter in the order they are listed
+ *    allHeaders:    Include all headers from the query parameter in the order they are listed, even if values are not present
  *    debugLocation: Prepend each value with the row & column it belongs in
  *
  * For example:
@@ -433,11 +433,9 @@ function parseJSONObject_(object, query, options, includeFunc, transformFunc) {
   }
 
   // Prepopulate the headers to lock in their order
-  if (hasOption_(options, "allHeaders") && Array.isArray(query))
-  {
-    for (var i = 0; i < query.length; i++)
-    {
-      headers[query[i]] = Object.keys(headers).length;
+  if (hasOption_(options, "allHeaders") && Array.isArray(query)) {
+    for (var subQuery of query) {
+      headers[subQuery] = Object.keys(headers).length;
     }
   }
   
