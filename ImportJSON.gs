@@ -136,9 +136,8 @@ function ImportJSONViaPost(url, payload, fetchOptions, query, parseOptions) {
 }
 
 /**
- * Imports a JSON text from a named Sheet and returns the results to be inserted into a Google Spreadsheet. The JSON feed is flattened to create 
- * a two-dimensional array. The first row contains the headers, with each column header indicating the path to that data in 
- * the JSON feed. The remaining rows contain the data. 
+ * Parses a JSON text from a named Sheet and returns the results to be inserted into a Google Spreadsheet.
+ * The entire target sheet is concatenated into one json string, which is then parsed and handled as normal.
  * 
  * By default, data gets transformed so it looks more like a normal data import. Specifically:
  *
@@ -158,7 +157,7 @@ function ImportJSONViaPost(url, payload, fetchOptions, query, parseOptions) {
  *
  * For example:
  *
- *   =ImportJSONFromSheet("Source", "/feed/entry/title,/feed/entry/content",
+ *   =ParseJSONFromSheet("Source", "/feed/entry/title,/feed/entry/content",
  *               "noInherit,noTruncate,rawHeaders")
  * 
  * @param {sheetName} the name of the sheet containg the text for the JSON
@@ -168,7 +167,7 @@ function ImportJSONViaPost(url, payload, fetchOptions, query, parseOptions) {
  * @return a two-dimensional array containing the data, with the first row containing headers
  * @customfunction
  **/
-function ImportJSONFromSheet(sheetName, query, options) {
+function ParseJSONFromSheet(sheetName, query, options) {
 
   var object = getDataFromNamedSheet_(sheetName);
   
@@ -624,17 +623,17 @@ function convertToBool_(map, key) {
 
 function getDataFromNamedSheet_(sheetName) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var source = ss.getSheetByName(sheetName);
+  var sheet = ss.getSheetByName(sheetName);
   
-  var jsonRange = source.getRange(1,1,source.getLastRow());
+  var jsonRange = sheet.getDataRange();
   var jsonValues = jsonRange.getValues();
   
   var jsonText = "";
-  for (var row in jsonValues) {
-    for (var col in jsonValues[row]) {
-      jsonText +=jsonValues[row][col];
+  for (var rowNum in jsonValues) {
+    for (var colNum in jsonValues[rowNum]) {
+      jsonText += jsonValues[rowNum][colNum];
     }
   }
-  Logger.log(jsonText);
+  Logger.log("Constructed json from sheet: "+jsonText");
   return JSON.parse(jsonText);
 }
