@@ -598,6 +598,7 @@ function includeXPath_(query, path, options) {
  * Returns true if the rule applies to the given path.
  */
 function applyXPathRule_(rule, path, options) {
+  rule = rule.replace(/\/$/, "");
   if (rule == path) {
     return true;
   }
