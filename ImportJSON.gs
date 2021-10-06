@@ -54,6 +54,7 @@
  *    noHeaders:     Don't include headers, only the data
  *    allHeaders:    Include all headers from the query parameter in the order they are listed
  *    debugLocation: Prepend each value with the row & column it belongs in
+ *    retryFetch:    Retries fetching data from the URL up to ten times
  *
  * For example:
  *
@@ -216,8 +217,8 @@ function ParseJSONFromSheet(sheetName, query, options) {
  * @customfunction
  **/
 function ImportJSONAdvanced(url, fetchOptions, query, parseOptions, includeFunc, transformFunc) {
-  var jsondata = UrlFetchApp.fetch(url, fetchOptions);
-  var object   = JSON.parse(jsondata.getContentText());
+  var resp = FetchUrl_(url, parseOptions, fetchOptions);
+  var object   = JSON.parse(resp.getContentText());
   
   return parseJSONObject_(object, query, parseOptions, includeFunc, transformFunc);
 }
@@ -249,6 +250,43 @@ function ImportJSONBasicAuth(url, username, password, query, parseOptions) {
   var encodedAuthInformation = Utilities.base64Encode(username + ":" + password);
   var header = {headers: {Authorization: "Basic " + encodedAuthInformation}};
   return ImportJSONAdvanced(url, header, query, parseOptions, includeXPath_, defaultTransform_);
+}
+
+/**
+ * Gets the json data, handling options and basic auth, and such
+ * 
+ * @param {url} the url to fetch
+ * @param {options} List of options for the function
+ * @param {fetchOptions} URLFetchApp options (optional)
+ * 
+ * @return the json data from the URL
+ */
+function FetchUrl_(url, options, fetchOptions) {
+  if (fetchOptions === null) {
+    fetchOptions = {};
+  }
+  var basicAuth = url.match(/^https?:\/\/(.*?:.*?)@/);
+  if (basicAuth) {
+    fetchOptions.headers = {
+      "Authorization": "Basic " + Utilities.base64Encode(basicAuth[1], Utilities.Charset.UTF_8)
+    };
+    url = url.replace(/^(https?):\/\/.*?:.*?@/, "$1://");
+  }
+  
+  var retries = 0;
+  if (hasOption_(options, "retryFetch")) {
+    retries = 10;
+    urlOptions.muteHttpExceptions = true;
+  }
+  var resp = UrlFetchApp.fetch(url, urlOptions);
+  for (var i = 0; i <= retries; i = i + 1) {
+    if (resp.getResponseCode() == 200) {
+      return resp
+    }
+    Utilities.sleep(1000);
+    resp = UrlFetchApp.fetch(url, urlOptions);
+  }
+  return resp;
 }
 
 /** 
