@@ -500,17 +500,24 @@ function includeXPath_(query, path, options) {
       }
     }  
   } else {
+    // Allow [0] indexing?  // TODO: Not sure this works?
+    var query = query.toString();
+    if(query.match(/\[[0-9]+\]/g)) {
+        query = query.replace(/\[[0-9]+\]/g, "");
+    }
     return applyXPathRule_(query, path, options);
   }
   
   return false; 
-};
+}
 
-/** 
- * Returns true if the rule applies to the given path. 
+/**
+ * Returns true if the rule applies to the given path.
  */
 function applyXPathRule_(rule, path, options) {
-  return path.indexOf(rule) == 0; 
+  if ( path.indexOf(rule) == 0 ){
+    return (path.charAt(rule.length) == "" || path.charAt(rule.length) == "/")
+  }
 }
 
 /** 
