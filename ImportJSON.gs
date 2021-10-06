@@ -470,13 +470,16 @@ function parseJSONObject_(object, query, options, includeFunc, transformFunc) {
     query = query.toString().split(",");
   }
 
-  // Prepopulate the headers to lock in their order
+  // Prepopulate the headers map and data headers to lock in their order
   if (Array.isArray(query)) {
-    for (var subQuery of query) {
-      headers[subQuery] = Object.keys(headers).length;
+    data[0] = new Array();
+    for (var i in query) {
+      headers[query[i]] = i;
+      data[0][i] = query[i];
     }
   } else {
     headers[query] = 0;
+    data[0] = new Array(query);
   }
   
   if (options) {
@@ -484,7 +487,6 @@ function parseJSONObject_(object, query, options, includeFunc, transformFunc) {
   }
     
   parseData_(headers, data, "", {rowIndex: 1}, object, query, options, includeFunc);
-  parseHeaders_(headers, data);
   transformData_(data, options, transformFunc);
 
   if (hasOption_(options, "rawJson")) {
@@ -547,17 +549,6 @@ function parseData_(headers, data, path, state, value, query, options, includeFu
   }
   
   return dataInserted;
-}
-
-/** 
- * Parses the headers array and inserts it into the first row of the data array.
- */
-function parseHeaders_(headers, data) {
-  data[0] = new Array();
-
-  for (key in headers) {
-    data[0][headers[key]] = key;
-  }
 }
 
 /** 
