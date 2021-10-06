@@ -560,6 +560,10 @@ function defaultTransform_(data, row, column, options) {
   if (hasOption_(options, "debugLocation")) {
     data[row][column] = "[" + row + "," + column + "]" + data[row][column];
   }
+  
+  if (!isNaN(parseFloat(data[row][column])) && isFinite(data[row][column])) {
+    data[row][column] = parseFloat(data[row][column]);
+  }
 }
 
 /** 
