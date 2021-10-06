@@ -541,11 +541,6 @@ function parseData_(headers, data, path, state, value, query, options, includeFu
       data[state.rowIndex] = new Array();
     }
     
-    // Add a new header if one doesn't exist
-    if (!headers[path] && headers[path] != 0) {
-      headers[path] = Object.keys(headers).length;
-    }
-    
     // Insert the data
     data[state.rowIndex][headers[path]] = value;
     dataInserted = true;
