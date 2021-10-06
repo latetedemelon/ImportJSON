@@ -259,7 +259,7 @@ function ImportJSONBasicAuth(url, username, password, query, options) {
 /**
  * An advanced version of ImportJSON designed to be easily extended by a script. This version cannot be called from within a 
  * spreadsheet.
- * 
+ *
  * Imports a JSON feed and returns the results to be inserted into a Google Spreadsheet. The JSON feed is flattened to create 
  * a two-dimensional array. The first row contains the headers, with each column header indicating the path to that data in 
  * the JSON feed. The remaining rows contain the data. 
@@ -655,7 +655,7 @@ function defaultTransform_(data, row, column, options) {
   if (hasOption_(options, "debugLocation")) {
     data[row][column] = "[" + row + "," + column + "]" + data[row][column];
   }
-  
+
   if (!isNaN(parseFloat(data[row][column])) && isFinite(data[row][column])) {
     data[row][column] = parseFloat(data[row][column]);
   }
