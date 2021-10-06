@@ -532,7 +532,7 @@ function parseData_(headers, data, path, state, value, query, options, includeFu
         dataInserted = true; 
       }
     }
-  } else if (!includeFunc || includeFunc(query, path, options)) {
+  } else if (!includeFunc || includeFunc(query, path, options) !== false) {
     // Handle arrays containing only scalar values
     if (Array.isArray(value)) {
       value = value.join(); 
@@ -583,7 +583,7 @@ function isObjectArray_(test) {
 }
 
 /** 
- * Returns true if the given query applies to the given path. 
+ * Returns index of the query if given path matches, otherwise false.
  */
 function includeXPath_(query, path, options) {
   if (!query) {
@@ -591,16 +591,13 @@ function includeXPath_(query, path, options) {
   } else if (Array.isArray(query)) {
     for (var i = 0; i < query.length; i++) {
       if (applyXPathRule_(query[i], path, options)) {
-        return true; 
+        return i; 
       }
     }  
   } else {
-    // Allow [0] indexing?  // TODO: Not sure this works?
-    var query = query.toString();
-    if(query.match(/\[[0-9]+\]/g)) {
-        query = query.replace(/\[[0-9]+\]/g, "");
+    if (applyXPathRule_(query, path, options)) {
+      return 0;
     }
-    return applyXPathRule_(query, path, options);
   }
   
   return false; 
@@ -610,9 +607,14 @@ function includeXPath_(query, path, options) {
  * Returns true if the rule applies to the given path.
  */
 function applyXPathRule_(rule, path, options) {
-  if ( path.indexOf(rule) == 0 ){
-    return (path.charAt(rule.length) == "" || path.charAt(rule.length) == "/")
+  if (rule == path) {
+    return true;
   }
+  // Handle list indexing TODO: Don't remove all list indexes, try a couple
+  if(path.match(/\[[0-9]+\]/g)) {
+    path = path.replace(/\[[0-9]+\]/g, "");
+  }
+  return rule == path;
 }
 
 /** 
