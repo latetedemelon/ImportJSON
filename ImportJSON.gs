@@ -11,10 +11,10 @@
   A library for importing JSON feeds into Google spreadsheets. Functions include:
 
      ImportJSON            For use by end users to import a JSON feed from a URL 
-     ImportJSONFromSheet   For use by end users to import JSON from one of the Sheets
      ImportJSONViaPost     For use by end users to import a JSON feed from a URL using POST parameters
-     ImportJSONAdvanced    For use by script developers to easily extend the functionality of this library
      ImportJSONBasicAuth   For use by end users to import a JSON feed from a URL with HTTP Basic Auth (added by Karsten Lettow)
+     ImportJSONAdvanced    For use by script developers to easily extend the functionality of this library
+     ParseJSONFromSheet    For use by end users to import JSON from one of the Sheets
 
   For future enhancements see https://github.com/bradjasper/ImportJSON/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement
   
