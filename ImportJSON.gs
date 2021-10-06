@@ -1,7 +1,7 @@
 /*====================================================================================================================================*
   ImportJSON by Joshua Coales, Brad Jasper and Trevor Lohrbeer
   ====================================================================================================================================
-  Version:      1.8.1
+  Version:      1.8.3
   Project Page: https://github.com/joshcoales/ImportJSON
   Copyright:    (c) 2021 by Joshua Coales
                 (c) 2017-2019 by Brad Jasper
@@ -14,7 +14,9 @@
      ImportJSON            For use by end users to import a JSON feed from a URL 
      ImportJSONWithPost    For use by end users to import a JSON feed from a URL using POST parameters
      ImportJSONAdvanced    For use by script developers to easily extend the functionality of this library
+     ParseJSON             For use by end users to import JSON data from string
      ParseJSONFromSheet    For use by end users to import JSON from one of the Sheets in the current spreadsheet
+     ParseJSONAdvanced     For use by script developers to easily extend the json parsing functionality of this library
   
   It also adds an "Update JSON cache" button to the scripts menu, which allows caching JSON results in the spreadsheet
 
@@ -25,6 +27,7 @@
   ------------------------------------------------------------------------------------------------------------------------------------
   Changelog:
   
+  1.8.3  (October 6, 2021) Adding =ParseJSON() and ParseJSONAdvanced() helper method
   1.8.2  (October 6, 2021) Rename ImportJSONViaPost to ImportJSONWithPost
   1.8.1  (October 6, 2021) Remove ImportJSONBasicAuth, as URL can have basic auth info in it, and then use ImportJSON()
   1.8.0  (October 6, 2021) Adding "Update JSON cache" button to menu
@@ -274,11 +277,43 @@ function ImportJSONAdvanced(url, fetchOptions, query, options, includeFunc, tran
   }
   var resp = FetchUrl_(url, optionsList, fetchOptions);
   var jsondata = resp.getContentText();
-  var object   = JSON.parse(jsondata);
-  
-  return parseJSONObject_(object, query, options, includeFunc, transformFunc);
+  return ParseJSONAdvanced(jsondata, query, options, includeFunc, transformFunc);
 }
 
+/**
+ * Parses JSON data which is already inside the spreadsheet, uses the same syntax and options as IMPORTJSON
+ *
+ * By default, data gets transformed so it looks more like a normal data import. Specifically:
+ *
+ *   - Data from parent JSON elements gets inherited to their child elements, so rows representing child elements contain the values 
+ *      of the rows representing their parent elements.
+ *   - Values longer than 256 characters get truncated.
+ *   - Headers have slashes converted to spaces, common prefixes removed and the resulting text converted to title case. 
+ *
+ * To change this behavior, pass in one of these values in the options parameter:
+ *
+ *    noInherit:     Don't inherit values from parent elements
+ *    noTruncate:    Don't truncate values
+ *    rawHeaders:    Don't prettify headers
+ *    noHeaders:     Don't include headers, only the data
+ *    allHeaders:    Include all headers from the query parameter in the order they are listed, even if values are not present
+ *    debugLocation: Prepend each value with the row & column it belongs in
+ *
+ * For example:
+ *
+ *   =ParseJSON(C9, "/feed/entry/title,/feed/entry/content",
+ *               "noInherit,noTruncate,rawHeaders")
+ * 
+ * @param {jsondata} The json data as a string
+ * @param {query}    a comma-separated lists of paths to import. Any path starting with one of these paths gets imported.
+ * @param {options}  a comma-separated list of options that alter processing of the data
+ * 
+ * @return a two-dimensional array containing the data, with the first row containing headers
+ * @customfunction
+ */
+function ParseJSON(jsondata, query, options) {
+  return ParseJSONAdvanced(jsondata, query, options, includeXPath_, defaultTransform_);
+}
 
 /**
  * Parses a JSON text from a named Sheet and returns the results to be inserted into a Google Spreadsheet.
@@ -313,10 +348,17 @@ function ImportJSONAdvanced(url, fetchOptions, query, options, includeFunc, tran
  * @customfunction
  **/
 function ParseJSONFromSheet(sheetName, query, options) {
+  var jsondata = getDataFromNamedSheet_(sheetName);
+  return ParseJSONAdvanced(jsondata, query, options, includeXPath_, defaultTransform_);
+}
 
-  var object = getDataFromNamedSheet_(sheetName);
+function ParseJSONAdvanced(jsondata, query, options, includeFunc, transformFunc) {
+  if (options) {
+    options = options.toString().split(",");
+  }
+  var object   = JSON.parse(jsondata);
   
-  return parseJSONObject_(object, query, options, includeXPath_, defaultTransform_);
+  return parseJSONObject_(object, query, options, includeFunc, transformFunc);
 }
 
 /**
@@ -753,5 +795,5 @@ function getDataFromNamedSheet_(sheetName) {
     }
   }
   Logger.log("Constructed json from sheet: "+jsonText");
-  return JSON.parse(jsonText);
+  return jsonText;
 }
