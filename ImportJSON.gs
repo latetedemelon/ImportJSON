@@ -294,7 +294,6 @@ function ImportJSONBasicAuth(url, username, password, query, options) {
  *                        contains the headers for the data, so test for row==0 to process headers only.
  *
  * @return a two-dimensional array containing the data, with the first row containing headers
- * @customfunction
  **/
 function ImportJSONAdvanced(url, fetchOptions, query, options, includeFunc, transformFunc) {
   var resp = FetchUrl_(url, options, fetchOptions);
