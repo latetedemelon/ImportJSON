@@ -794,6 +794,6 @@ function getDataFromNamedSheet_(sheetName) {
       jsonText += jsonValues[rowNum][colNum];
     }
   }
-  Logger.log("Constructed json from sheet: "+jsonText");
+  Logger.log("Constructed json from sheet: "+jsonText);
   return jsonText;
 }
