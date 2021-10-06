@@ -466,6 +466,10 @@ function parseJSONObject_(object, query, options, includeFunc, transformFunc) {
   var headers = {};  // A map of query path to column index
   var data    = new Array();
   
+  if (!query) {
+    query = "/";
+  }
+  
   if (query && !Array.isArray(query) && query.toString().indexOf(",") != -1) {
     query = query.toString().split(",");
   }
