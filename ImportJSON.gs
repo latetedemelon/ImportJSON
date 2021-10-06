@@ -544,7 +544,7 @@ function applyXPathRule_(rule, path, options) {
  *    debugLocation: Prepend each value with the row & column it belongs in
  */
 function defaultTransform_(data, row, column, options) {
-  if (data[row][column] == null) {
+  if (data[row][column] === null) {
     if (row < 2 || hasOption_(options, "noInherit")) {
       data[row][column] = "";
     } else {
