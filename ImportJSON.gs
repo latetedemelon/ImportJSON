@@ -482,18 +482,14 @@ function parseJSONObject_(object, query, options, includeFunc, transformFunc) {
     data[0] = new Array(query);
   }
   
-  if (options) {
-    options = options.toString().split(",");
-  }
-    
   parseData_(headers, data, "", {rowIndex: 1}, object, query, options, includeFunc);
   transformData_(data, options, transformFunc);
 
-  if (hasOption_(options, "rawJson")) {
-    return JSON.stringify(data);
+  if (hasOption_(options, "noHeaders") || hasOption_(options, "rawJson")) {
+    data = (data.length > 1 ? data.slice(1) : new Array());
   }
   
-  return hasOption_(options, "noHeaders") ? (data.length > 1 ? data.slice(1) : new Array()) : data;
+  return data;
 }
 
 /** 
