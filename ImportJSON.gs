@@ -203,7 +203,7 @@ function ParseJSONFromSheet(sheetName, query, options) {
  * function takes the data and truncates it. For more robust versions of these functions, see the internal code of this library.
  *
  * @param {url}           the URL to a public JSON feed
- * @param {fetchOptions}  an object whose properties are options used to retrieve the JSON feed from the URL
+ * @param {fetchOptions}  an object whose properties are URLFetchApp options used to retrieve the JSON feed from the URL
  * @param {query}         the query passed to the include function
  * @param {parseOptions}  a comma-separated list of options that may alter processing of the data
  * @param {includeFunc}   a function with the signature func(query, path, options) that returns true if the data element at the given path
