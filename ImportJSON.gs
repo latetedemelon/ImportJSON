@@ -141,7 +141,6 @@ function updateCachedJson() {
  *    noTruncate:    Don't truncate values
  *    rawHeaders:    Don't prettify headers
  *    noHeaders:     Don't include headers, only the data
- *    allHeaders:    Include all headers from the query parameter in the order they are listed, even if the values are not present
  *    debugLocation: Prepend each value with the row & column it belongs in
  *    retryFetch:    Retries fetching data from the URL up to ten times
  *    rawJson:       Returns the raw json data, which can then be parsed with =ParseJSON()
@@ -186,7 +185,6 @@ function ImportJSON(url, query, options) {
  *    noTruncate:    Don't truncate values
  *    rawHeaders:    Don't prettify headers
  *    noHeaders:     Don't include headers, only the data
- *    allHeaders:    Include all headers from the query parameter in the order they are listed, even if the values are not present
  *    debugLocation: Prepend each value with the row & column it belongs in
  *    retryFetch:    Retries fetching data from the URL up to ten times
  *    rawJson:       Returns the raw json data, which can then be parsed with =ParseJSON()
@@ -296,7 +294,6 @@ function ImportJSONAdvanced(url, fetchOptions, query, options, includeFunc, tran
  *    noTruncate:    Don't truncate values
  *    rawHeaders:    Don't prettify headers
  *    noHeaders:     Don't include headers, only the data
- *    allHeaders:    Include all headers from the query parameter in the order they are listed, even if the values are not present
  *    debugLocation: Prepend each value with the row & column it belongs in
  *
  * For example:
@@ -332,7 +329,6 @@ function ParseJSON(jsondata, query, options) {
  *    noTruncate:    Don't truncate values
  *    rawHeaders:    Don't prettify headers
  *    noHeaders:     Don't include headers, only the data
- *    allHeaders:    Include all headers from the query parameter in the order they are listed, even if the values are not present
  *    debugLocation: Prepend each value with the row & column it belongs in
  *
  * For example:
@@ -467,33 +463,33 @@ function AddOAuthService__(name, accessTokenUrl, requestTokenUrl, authorizationU
  * Parses a JSON object and returns a two-dimensional array containing the data of that object.
  */
 function parseJSONObject_(object, query, options, includeFunc, transformFunc) {
-  var headers = new Array();
+  var headers = {};  // A map of query path to column index
   var data    = new Array();
   
   if (query && !Array.isArray(query) && query.toString().indexOf(",") != -1) {
     query = query.toString().split(",");
   }
-
-  // Prepopulate the headers to lock in their order
-  if (hasOption_(options, "allHeaders") && Array.isArray(query)) {
-    for (var subQuery of query) {
-      headers[subQuery] = Object.keys(headers).length;
+  
+  // Prepopulate the headers map and data headers to lock in their order
+  if (Array.isArray(query)) {
+    data[0] = new Array();
+    for (var i in query) {
+      headers[query[i]] = i;
+      data[0][i] = query[i];
     }
+  } else {
+    headers[query] = 0;
+    data[0] = new Array(query);
   }
   
-  if (options) {
-    options = options.toString().split(",");
-  }
-    
-  parseData_(headers, data, "", {rowIndex: 1}, object, query, options, includeFunc);
-  parseHeaders_(headers, data);
+  parseData_(headers, data, "", object, query, options, includeFunc);
   transformData_(data, options, transformFunc);
 
-  if (hasOption_(options, "rawJson")) {
-    return JSON.stringify(data);
+  if (hasOption_(options, "noHeaders") || hasOption_(options, "rawJson")) {
+    data = (data.length > 1 ? data.slice(1) : new Array());
   }
   
-  return hasOption_(options, "noHeaders") ? (data.length > 1 ? data.slice(1) : new Array()) : data;
+  return data;
 }
 
 /** 
@@ -505,65 +501,44 @@ function parseJSONObject_(object, query, options, includeFunc, transformFunc) {
  * property extending the path. For instance, if the object contains the property "entry" and the path passed in was "/feed",
  * this function is called with the value of the entry property and the path "/feed/entry".
  *
- * If the value is an array containing other arrays or objects, each element in the array is passed into this function with 
- * the rowIndex incremeneted for each element.
- *
  * If the value is an array containing only scalar values, those values are joined together and inserted into the data array as 
  * a single value.
  *
  * If the value is a scalar, the value is inserted directly into the data array.
  */
-function parseData_(headers, data, path, state, value, query, options, includeFunc) {
-  var dataInserted = false;
-
-  if (Array.isArray(value) && isObjectArray_(value)) {
-    for (var i = 0; i < value.length; i++) {
-      if (parseData_(headers, data, path, state, value[i], query, options, includeFunc)) {
-        dataInserted = true;
-
-        if (data[state.rowIndex]) {
-          state.rowIndex++;
-        }
-      }
-    }
-  } else if (isObject_(value)) {
-    for (key in value) {
-      if (parseData_(headers, data, path + "/" + key, state, value[key], query, options, includeFunc)) {
-        dataInserted = true; 
-      }
-    }
-  } else if (!includeFunc || includeFunc(query, path, options)) {
-    // Handle arrays containing only scalar values
-    if (Array.isArray(value)) {
-      value = value.join(); 
-    }
-    
-    // Insert new row if one doesn't already exist
-    if (!data[state.rowIndex]) {
-      data[state.rowIndex] = new Array();
-    }
-    
-    // Add a new header if one doesn't exist
-    if (!headers[path] && headers[path] != 0) {
-      headers[path] = Object.keys(headers).length;
-    }
-    
-    // Insert the data
-    data[state.rowIndex][headers[path]] = value;
-    dataInserted = true;
+function parseData_(headers, data, path, value, query, options, includeFunc) {
+  if (!includeFunc || includeFunc(query, path, options) !== false) {
+    var colIndex = includeFunc(query, path, options);
+    insertValue_(data, colIndex, value);
   }
   
-  return dataInserted;
+  if (isObject_(value)) {
+    for (key in value) {
+      var subPath = path + "/" + key;
+      parseData_(headers, data, subPath, value[key], query, options, includeFunc);
+    }
+  } else if (Array.isArray(value)) {
+    for (var i = 0; i < value.length; i++) {
+      var subPath = path + "[" + i.toString() + "]"
+      parseData_(headers, data, subPath, value[i], query, options, includeFunc);
+    }
+  }
 }
 
-/** 
- * Parses the headers array and inserts it into the first row of the data array.
- */
-function parseHeaders_(headers, data) {
-  data[0] = new Array();
-
-  for (key in headers) {
-    data[0][headers[key]] = key;
+function insertValue_(data, colIndex, value) {
+  var rowIndex = 1;
+  while (true) {
+    // Insert new row if one doesn't already exist
+    if (!data[rowIndex]) {
+      data[rowIndex] = new Array(data[0].length);
+    }
+    
+    if (data[rowIndex][colIndex] === undefined) {
+      data[rowIndex][colIndex] = value;
+      return;
+    } else {
+      rowIndex += 1;
+    }
   }
 }
 
@@ -599,7 +574,7 @@ function isObjectArray_(test) {
 }
 
 /** 
- * Returns true if the given query applies to the given path. 
+ * Returns index of the query if given path matches, otherwise false.
  */
 function includeXPath_(query, path, options) {
   if (!query) {
@@ -607,16 +582,13 @@ function includeXPath_(query, path, options) {
   } else if (Array.isArray(query)) {
     for (var i = 0; i < query.length; i++) {
       if (applyXPathRule_(query[i], path, options)) {
-        return true; 
+        return i; 
       }
     }  
   } else {
-    // Allow [0] indexing?  // TODO: Not sure this works?
-    var query = query.toString();
-    if(query.match(/\[[0-9]+\]/g)) {
-        query = query.replace(/\[[0-9]+\]/g, "");
+    if (applyXPathRule_(query, path, options)) {
+      return 0;
     }
-    return applyXPathRule_(query, path, options);
   }
   
   return false; 
@@ -626,9 +598,14 @@ function includeXPath_(query, path, options) {
  * Returns true if the rule applies to the given path.
  */
 function applyXPathRule_(rule, path, options) {
-  if ( path.indexOf(rule) == 0 ){
-    return (path.charAt(rule.length) == "" || path.charAt(rule.length) == "/")
+  if (rule == path) {
+    return true;
   }
+  // Handle list indexing TODO: Don't remove all list indexes, try a couple
+  if(path.match(/\[[0-9]+\]/g)) {
+    path = path.replace(/\[[0-9]+\]/g, "");
+  }
+  return rule == path;
 }
 
 /** 
@@ -638,30 +615,34 @@ function applyXPathRule_(rule, path, options) {
  *     of the rows representing their parent elements.
  *   - Values longer than 256 characters get truncated.
  *   - Values in row 0 (headers) have slashes converted to spaces, common prefixes removed and the resulting text converted to title 
-*      case. 
+ *     case. 
  *
  * To change this behavior, pass in one of these values in the options parameter:
  *
- *    noInherit:     Don't inherit values from parent elements
+ *    noInherit:     Don't inherit values from previous element results
  *    noTruncate:    Don't truncate values
  *    rawHeaders:    Don't prettify headers
  *    debugLocation: Prepend each value with the row & column it belongs in
+ *    rawJson:       Dump each value as JSON
  */
 function defaultTransform_(data, row, column, options) {
-  if (data[row][column] === null) {
+  if (data[row][column] == null) {
     if (row < 2 || hasOption_(options, "noInherit")) {
       data[row][column] = "";
     } else {
       data[row][column] = data[row-1][column];
     }
-  } 
+  }
 
   if (!hasOption_(options, "rawHeaders") && row == 0) {
     if (column == 0 && data[row].length > 1) {
       removeCommonPrefixes_(data, row);  
     }
-    
     data[row][column] = toTitleCase_(data[row][column].toString().replace(/[\/\_]/g, " "));
+  }
+
+  if (hasOption_(options, "rawJson") && row > 0 && data[row][column]) {
+    data[row][column] = JSON.stringify(data[row][column]);
   }
   
   if (!hasOption_(options, "noTruncate") && data[row][column]) {
