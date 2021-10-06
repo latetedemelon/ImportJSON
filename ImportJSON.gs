@@ -482,7 +482,7 @@ function parseJSONObject_(object, query, options, includeFunc, transformFunc) {
     data[0] = new Array(query);
   }
   
-  parseData_(headers, data, "", {rowIndex: 1}, object, query, options, includeFunc);
+  parseData_(headers, data, "", object, query, options, includeFunc);
   transformData_(data, options, transformFunc);
 
   if (hasOption_(options, "noHeaders") || hasOption_(options, "rawJson")) {
@@ -501,50 +501,45 @@ function parseJSONObject_(object, query, options, includeFunc, transformFunc) {
  * property extending the path. For instance, if the object contains the property "entry" and the path passed in was "/feed",
  * this function is called with the value of the entry property and the path "/feed/entry".
  *
- * If the value is an array containing other arrays or objects, each element in the array is passed into this function with 
- * the rowIndex incremeneted for each element.
- *
  * If the value is an array containing only scalar values, those values are joined together and inserted into the data array as 
  * a single value.
  *
  * If the value is a scalar, the value is inserted directly into the data array.
  */
-function parseData_(headers, data, path, state, value, query, options, includeFunc) {
-  var dataInserted = false;
-
-  if (Array.isArray(value) && isObjectArray_(value)) {
-    for (var i = 0; i < value.length; i++) {
-      if (parseData_(headers, data, path, state, value[i], query, options, includeFunc)) {
-        dataInserted = true;
-
-        if (data[state.rowIndex]) {
-          state.rowIndex++;
-        }
-      }
-    }
-  } else if (isObject_(value)) {
-    for (key in value) {
-      if (parseData_(headers, data, path + "/" + key, state, value[key], query, options, includeFunc)) {
-        dataInserted = true; 
-      }
-    }
-  } else if (!includeFunc || includeFunc(query, path, options) !== false) {
-    // Handle arrays containing only scalar values
-    if (Array.isArray(value)) {
-      value = value.join(); 
-    }
-    
-    // Insert new row if one doesn't already exist
-    if (!data[state.rowIndex]) {
-      data[state.rowIndex] = new Array();
-    }
-    
-    // Insert the data
-    data[state.rowIndex][headers[path]] = value;
-    dataInserted = true;
+function parseData_(headers, data, path, value, query, options, includeFunc) {
+  if (!includeFunc || includeFunc(query, path, options) !== false) {
+    var colIndex = includeFunc(query, path, options);
+    insertValue_(data, colIndex, value);
   }
   
-  return dataInserted;
+  if (isObject_(value)) {
+    for (key in value) {
+      var subPath = path + "/" + key;
+      parseData_(headers, data, subPath, value[key], query, options, includeFunc);
+    }
+  } else if (Array.isArray(value)) {
+    for (var i = 0; i < value.length; i++) {
+      var subPath = path + "[" + i.toString() + "]"
+      parseData_(headers, data, subPath, value[i], query, options, includeFunc);
+    }
+  }
+}
+
+function insertValue_(data, colIndex, value) {
+  var rowIndex = 1;
+  while (true) {
+    // Insert new row if one doesn't already exist
+    if (!data[rowIndex]) {
+      data[rowIndex] = new Array(data[0].length);
+    }
+    
+    if (data[rowIndex][colIndex] === undefined) {
+      data[rowIndex][colIndex] = value;
+      return;
+    } else {
+      rowIndex += 1;
+    }
+  }
 }
 
 /** 
