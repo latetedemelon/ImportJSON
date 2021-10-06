@@ -100,12 +100,12 @@ function ImportJSON(url, query, parseOptions) {
  *
  * For example:
  *
- *   =ImportJSON("http://gdata.youtube.com/feeds/api/standardfeeds/most_popular?v=2&alt=json", "user=bob&apikey=xxxx", 
+ *   =ImportJSONViaPost("http://gdata.youtube.com/feeds/api/standardfeeds/most_popular?v=2&alt=json", "user=bob&apikey=xxxx", 
  *               "validateHttpsCertificates=false", "/feed/entry/title,/feed/entry/content", "noInherit,noTruncate,rawHeaders")
  * 
  * @param {url}          the URL to a public JSON feed
  * @param {payload}      the content to pass with the POST request; usually a URL encoded list of parameters separated by ampersands
- * @param {fetchOptions} a comma-separated list of options used to retrieve the JSON feed from the URL
+ * @param {fetchOptions} a comma-separated list of URLFetchApp key=value options used to retrieve the JSON feed from the URL. Can be used to set content type, (which default to form data)
  * @param {query}        a comma-separated list of paths to import. Any path starting with one of these paths gets imported.
  * @param {parseOptions} a comma-separated list of options that alter processing of the data
  * @customfunction
@@ -582,8 +582,8 @@ function parseToObject_(text) {
   var map     = new Object();
   var entries = (text != null && text.trim().length > 0) ? text.toString().split(",") : new Array();
   
-  for (var i = 0; i < entries.length; i++) {
-    addToMap_(map, entries[i]);  
+  for (entry of entries) {
+    addToMap_(map, entry);
   }
   
   return map;
@@ -593,7 +593,7 @@ function parseToObject_(text) {
  * Parses the given entry and adds it to the given map, trimming any leading or trailing spaces from the key.
  */
 function addToMap_(map, entry) {
-  var equalsIndex = entry.indexOf("=");  
+  var equalsIndex = entry.indexOf("=");
   var key         = (equalsIndex != -1) ? entry.substring(0, equalsIndex) : entry;
   var value       = (key.length + 1 < entry.length) ? entry.substring(key.length + 1) : "";
   
@@ -604,16 +604,22 @@ function addToMap_(map, entry) {
  * Returns the given value as a boolean.
  */
 function toBool_(value) {
-  return value == null ? false : (value.toString().toLowerCase() == "true" ? true : false);
+  if (value === null) {
+    return false;
+  }
+  if (value === "") {  // Support passing flags by name alone
+    return true;
+  }
+  return (value.toString().toLowerCase() == "true");
 }
 
 /**
  * Converts the value for the given key in the given map to a bool.
  */
 function convertToBool_(map, key) {
-  if (map[key] != null) {
+  if (map[key] !== null) {
     map[key] = toBool_(map[key]);
-  }  
+  }
 }
 
 function getDataFromNamedSheet_(sheetName) {
