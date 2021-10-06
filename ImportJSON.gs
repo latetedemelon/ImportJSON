@@ -381,15 +381,15 @@ function FetchUrl_(url, options, fetchOptions) {
   var retries = 0;
   if (hasOption_(options, "retryFetch")) {
     retries = 10;
-    urlOptions.muteHttpExceptions = true;
+    fetchOptions.muteHttpExceptions = true;
   }
-  var resp = UrlFetchApp.fetch(url, urlOptions);
+  var resp = UrlFetchApp.fetch(url, fetchOptions);
   for (var i = 0; i <= retries; i = i + 1) {
     if (resp.getResponseCode() == 200) {
       return resp
     }
     Utilities.sleep(1000);
-    resp = UrlFetchApp.fetch(url, urlOptions);
+    resp = UrlFetchApp.fetch(url, fetchOptions);
   }
   return resp;
 }
