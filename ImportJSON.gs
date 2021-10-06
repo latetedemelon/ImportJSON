@@ -92,7 +92,7 @@ function updateCachedJson() {
   var numRows = sheetRange.getNumRows();
   var numColumns = sheetRange.getNumColumns();
   var values = sheetRange.getValues();
-  var cacheColumns = new Map();  // A map of column indexes, and the json path to cache
+  var cacheColumns = {};  // Map of column index to json query
 
   for (var rowNum = 0; rowNum <= numRows - 1; rowNum++) {
     for (var colNum = 0; colNum <= numColumns - 1; colNum++) {
@@ -100,13 +100,13 @@ function updateCachedJson() {
       // Check for new cache columns
       var cachePath = getCacheHeaderPath_(value);
       if (cachePath !== null) {
-        cacheColumns.set(colNum, cachePath);
+        cacheColumns[colNum] = cachePath;
         Logger.log("Found header column: "+colNum.toString()+" with path: "+cachePath);
         continue;
       }
 
       // If this is a cache column, update it
-      if (cacheColumns.has(colNum)) {
+      if (cacheColumns[colNum] !== undefined) {
         // Get URL, cell to the left
         var urlValue = values[rowNum][colNum - 1];
         // Don't update empty URLs
