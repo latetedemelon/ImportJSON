@@ -367,6 +367,7 @@ function ParseJSONAdvanced(jsondata, query, options, includeFunc, transformFunc)
  * @return the json data from the URL
  */
 function FetchUrl_(url, options, fetchOptions) {
+  Logger.log("Fetching url: "+url);
   if (fetchOptions === null) {
     fetchOptions = {};
   }
@@ -389,6 +390,7 @@ function FetchUrl_(url, options, fetchOptions) {
       return resp
     }
     Utilities.sleep(1000);
+    Logger.log("Retry URL: "+url);
     resp = UrlFetchApp.fetch(url, fetchOptions);
   }
   return resp;
