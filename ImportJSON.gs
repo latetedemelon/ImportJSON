@@ -463,13 +463,13 @@ function AddOAuthService__(name, accessTokenUrl, requestTokenUrl, authorizationU
  * Parses a JSON object and returns a two-dimensional array containing the data of that object.
  */
 function parseJSONObject_(object, query, options, includeFunc, transformFunc) {
-  var headers = new Array();
+  var headers = {};  // A map of query path to column index
   var data    = new Array();
   
   if (query && !Array.isArray(query) && query.toString().indexOf(",") != -1) {
     query = query.toString().split(",");
   }
-
+  
   // Prepopulate the headers map and data headers to lock in their order
   if (Array.isArray(query)) {
     data[0] = new Array();
