@@ -55,6 +55,7 @@
  *    allHeaders:    Include all headers from the query parameter in the order they are listed
  *    debugLocation: Prepend each value with the row & column it belongs in
  *    retryFetch:    Retries fetching data from the URL up to ten times
+ *    rawJson:       Returns the raw json data, which can then be parsed with =ParseJSON()
  *
  * For example:
  *
@@ -383,6 +384,10 @@ function parseJSONObject_(object, query, options, includeFunc, transformFunc) {
   parseData_(headers, data, "", {rowIndex: 1}, object, query, options, includeFunc);
   parseHeaders_(headers, data);
   transformData_(data, options, transformFunc);
+
+  if (hasOption_(options, "rawJson")) {
+    return JSON.stringify(data);
+  }
   
   return hasOption_(options, "noHeaders") ? (data.length > 1 ? data.slice(1) : new Array()) : data;
 }
