@@ -1,9 +1,10 @@
 /*====================================================================================================================================*
-  ImportJSON by Brad Jasper and Trevor Lohrbeer
+  ImportJSON by Joshua Coales, Brad Jasper and Trevor Lohrbeer
   ====================================================================================================================================
-  Version:      1.5.0
-  Project Page: https://github.com/bradjasper/ImportJSON
-  Copyright:    (c) 2017-2019 by Brad Jasper
+  Version:      1.8.0
+  Project Page: https://github.com/joshcoales/ImportJSON
+  Copyright:    (c) 2021 by Joshua Coales
+                (c) 2017-2019 by Brad Jasper
                 (c) 2012-2017 by Trevor Lohrbeer
   License:      GNU General Public License, version 3 (GPL-3.0) 
                 http://www.opensource.org/licenses/gpl-3.0.html
@@ -14,16 +15,24 @@
      ImportJSONViaPost     For use by end users to import a JSON feed from a URL using POST parameters
      ImportJSONBasicAuth   For use by end users to import a JSON feed from a URL with HTTP Basic Auth (added by Karsten Lettow)
      ImportJSONAdvanced    For use by script developers to easily extend the functionality of this library
-     ParseJSONFromSheet    For use by end users to import JSON from one of the Sheets
-
-  For future enhancements see https://github.com/bradjasper/ImportJSON/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement
+     ParseJSONFromSheet    For use by end users to import JSON from one of the Sheets in the current spreadsheet
   
-  For bug reports see https://github.com/bradjasper/ImportJSON/issues
+  It also adds an "Update JSON cache" button to the scripts menu, which allows caching JSON results in the spreadsheet
+
+  For future enhancements see https://github.com/joshcoales/ImportJSON/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement
+  
+  For bug reports see https://github.com/joshcoales/ImportJSON/issues
 
   ------------------------------------------------------------------------------------------------------------------------------------
   Changelog:
   
-  1.6.0 (June 2, 2019) Fixed null values (thanks @gdesmedt1)
+  1.8.0  (October 6, 2021) Adding "Update JSON cache" button to menu
+  1.7.4  (October 6, 2021) Adding rawJson option
+  1.7.3  (October 6, 2021) Return floats as floats
+  1.7.2  (October 6, 2021) Ensuring xpath does not treat key as prefix
+  1.7.1  (October 6, 2021) Adding retryFetch option
+  1.7.0  (October 6, 2021) Renaming ImportJsonFromSheet to ParseJsonFromSheet
+  1.6.0  (June 2, 2019) Fixed null values (thanks @gdesmedt1)
   1.5.0  (January 11, 2019) Adds ability to include all headers in a fixed order even when no data is present for a given header in some or all rows.
   1.4.0  (July 23, 2017) Transfer project to Brad Jasper. Fixed off-by-one array bug. Fixed previous value bug. Added custom annotations. Added ImportJSONFromSheet and ImportJSONBasicAuth.
   1.3.0  Adds ability to import the text from a set of rows containing the text to parse. All cells are concatenated
