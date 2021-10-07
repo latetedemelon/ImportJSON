@@ -1,7 +1,7 @@
 /*====================================================================================================================================*
   ImportJSON by Joshua Coales, Brad Jasper and Trevor Lohrbeer
   ====================================================================================================================================
-  Version:      1.8.3
+  Version:      1.9.0
   Project Page: https://github.com/joshcoales/ImportJSON
   Copyright:    (c) 2021 by Joshua Coales
                 (c) 2017-2019 by Brad Jasper
@@ -27,6 +27,7 @@
   ------------------------------------------------------------------------------------------------------------------------------------
   Changelog:
   
+  1.9.0  (October 6, 2021) Various xpath fixes, and rawJson output fix
   1.8.3  (October 6, 2021) Adding =ParseJSON() and ParseJSONAdvanced() helper method
   1.8.2  (October 6, 2021) Rename ImportJSONViaPost to ImportJSONWithPost
   1.8.1  (October 6, 2021) Remove ImportJSONBasicAuth, as URL can have basic auth info in it, and then use ImportJSON()
