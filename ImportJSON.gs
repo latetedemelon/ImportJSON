@@ -112,7 +112,7 @@ function ImportJSON(url, query, parseOptions) {
  *
  * @return a two-dimensional array containing the data, with the first row containing headers
  **/
-function ImportJSONViaPost(url, payload, fetchOptions, query, parseOptions) {
+function ImportJSONViaPost(url, payload, fetchOptions, headers, query, parseOptions) {
   var postOptions = parseToObject_(fetchOptions);
   
   if (postOptions["method"] == null) {
@@ -126,6 +126,8 @@ function ImportJSONViaPost(url, payload, fetchOptions, query, parseOptions) {
   if (postOptions["contentType"] == null) {
     postOptions["contentType"] = "application/x-www-form-urlencoded";
   }
+
+  postOptions["headers"] = parseToObject_(headers);
 
   convertToBool_(postOptions, "validateHttpsCertificates");
   convertToBool_(postOptions, "useIntranet");
@@ -341,7 +343,7 @@ function parseJSONObject_(object, query, options, includeFunc, transformFunc) {
     options = options.toString().split(",");
   }
     
-  parseData_(headers, data, "", {rowIndex: 1}, object, query, options, includeFunc);
+  parseData_(headers, data, "", "", {rowIndex: 1}, object, query, options, includeFunc);
   parseHeaders_(headers, data);
   transformData_(data, options, transformFunc);
   
@@ -365,12 +367,12 @@ function parseJSONObject_(object, query, options, includeFunc, transformFunc) {
  *
  * If the value is a scalar, the value is inserted directly into the data array.
  */
-function parseData_(headers, data, path, state, value, query, options, includeFunc) {
+function parseData_(headers, data, path, realPath, state, value, query, options, includeFunc) {
   var dataInserted = false;
 
   if (Array.isArray(value) && isObjectArray_(value)) {
     for (var i = 0; i < value.length; i++) {
-      if (parseData_(headers, data, path, state, value[i], query, options, includeFunc)) {
+      if (parseData_(headers, data, path, realPath + "/" + i, state, value[i], query, options, includeFunc)) {
         dataInserted = true;
 
         if (data[state.rowIndex]) {
@@ -380,11 +382,11 @@ function parseData_(headers, data, path, state, value, query, options, includeFu
     }
   } else if (isObject_(value)) {
     for (key in value) {
-      if (parseData_(headers, data, path + "/" + key, state, value[key], query, options, includeFunc)) {
+      if (parseData_(headers, data, path + "/" + key, realPath + "/" + key, state, value[key], query, options, includeFunc)) {
         dataInserted = true; 
       }
     }
-  } else if (!includeFunc || includeFunc(query, path, options)) {
+  } else if (!includeFunc || includeFunc(query, realPath, options)) {
     // Handle arrays containing only scalar values
     if (Array.isArray(value)) {
       value = value.join(); 
@@ -629,6 +631,5 @@ function getDataFromNamedSheet_(sheetName) {
       jsonText +=jsonValues[row][col];
     }
   }
-  Logger.log(jsonText);
   return JSON.parse(jsonText);
 }
