@@ -1,3 +1,7 @@
+/**
+ * @OnlyCurrentDoc Limits the script to only accessing the current sheet.
+ */
+
 /*====================================================================================================================================*
   ImportJSON by Brad Jasper and Trevor Lohrbeer
   ====================================================================================================================================
@@ -15,6 +19,7 @@
      ImportJSONViaPost     For use by end users to import a JSON feed from a URL using POST parameters
      ImportJSONAdvanced    For use by script developers to easily extend the functionality of this library
      ImportJSONBasicAuth   For use by end users to import a JSON feed from a URL with HTTP Basic Auth (added by Karsten Lettow)
+     ImportJSONApiKey      For use by end users to import a JSON feed from a URL with an API key (added by Michael Voorhaen)
 
   For future enhancements see https://github.com/bradjasper/ImportJSON/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement
   
@@ -23,7 +28,6 @@
   ------------------------------------------------------------------------------------------------------------------------------------
   Changelog:
   
-  1.6.0 (June 2, 2019) Fixed null values (thanks @gdesmedt1)
   1.5.0  (January 11, 2019) Adds ability to include all headers in a fixed order even when no data is present for a given header in some or all rows.
   1.4.0  (July 23, 2017) Transfer project to Brad Jasper. Fixed off-by-one array bug. Fixed previous value bug. Added custom annotations. Added ImportJSONFromSheet and ImportJSONBasicAuth.
   1.3.0  Adds ability to import the text from a set of rows containing the text to parse. All cells are concatenated
@@ -217,6 +221,7 @@ function ImportJSONFromSheet(sheetName, query, options) {
  * @customfunction
  **/
 function ImportJSONAdvanced(url, fetchOptions, query, parseOptions, includeFunc, transformFunc) {
+  url += (url.split('?')[1] ? '&' : '?') + 'time=' + Date.now();
   var jsondata = UrlFetchApp.fetch(url, fetchOptions);
   var object   = JSON.parse(jsondata.getContentText());
   
@@ -249,6 +254,11 @@ function ImportJSONAdvanced(url, fetchOptions, query, parseOptions, includeFunc,
 function ImportJSONBasicAuth(url, username, password, query, parseOptions) {
   var encodedAuthInformation = Utilities.base64Encode(username + ":" + password);
   var header = {headers: {Authorization: "Basic " + encodedAuthInformation}};
+  return ImportJSONAdvanced(url, header, query, parseOptions, includeXPath_, defaultTransform_);
+}
+
+function ImportJSONApiKey(url, apiKey, query, parseOptions) {
+  var header = {headers: {ApiKey: apiKey}};
   return ImportJSONAdvanced(url, header, query, parseOptions, includeXPath_, defaultTransform_);
 }
 
@@ -424,7 +434,7 @@ function parseHeaders_(headers, data) {
  */
 function transformData_(data, options, transformFunc) {
   for (var i = 0; i < data.length; i++) {
-    for (var j = 0; j < data[0].length; j++) {
+    for (var j = 0; j < data[i].length; j++) {
       transformFunc(data, i, j, options);
     }
   }
@@ -476,6 +486,12 @@ function applyXPathRule_(rule, path, options) {
   return path.indexOf(rule) == 0; 
 }
 
+function isDate(value) {
+  
+  re = /^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24\:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/;
+  return re.test(value);
+}
+
 /** 
  * By default, this function transforms the value at the given row & column so it looks more like a normal data import. Specifically:
  *
@@ -516,6 +532,13 @@ function defaultTransform_(data, row, column, options) {
   if (hasOption_(options, "debugLocation")) {
     data[row][column] = "[" + row + "," + column + "]" + data[row][column];
   }
+
+  if (hasOption_(options, "parseDates")) {
+    if (data[row][column] && isDate(data[row][column])) {
+      data[row][column] = new Date(data[row][column]); 
+    }
+  }
+
 }
 
 /** 
