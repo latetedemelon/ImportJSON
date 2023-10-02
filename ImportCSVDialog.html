@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script>
+    function onApiLoad() {
+      document.getElementById('file-input').addEventListener('change', readSingleFile, false);
+    }
+
+    function readSingleFile(e) {
+      var file = e.target.files[0];
+      if (!file)
+        return;
+      
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        google.script.run.withSuccessHandler(importOk).withFailureHandler(showResult).importCSVFactura(e.target.result);
+      };
+      reader.readAsText(file);
+    }
+
+    function importOk(contents) {
+      showResult(contents);
+      google.script.host.close();
+    }
+
+    function showResult(message) {
+      document.getElementById('result-header').innerHTML = "Result:"
+      document.getElementById('result').innerHTML = 'Error: ' + message;
+    }
+  </script>
+</head>
+<body>
+  <div>
+    <input type="file" id="file-input"/>
+    <h3 id="result-header"/>
+    <p id="result"/>
+  </div>
+  <script src="https://apis.google.com/js/api.js?onload=onApiLoad"></script>
+</body>
+</html>
