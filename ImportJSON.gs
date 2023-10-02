@@ -1,3 +1,7 @@
+/**
+ * @OnlyCurrentDoc Limits the script to only accessing the current sheet.
+ */
+
 /*====================================================================================================================================*
   ImportJSON by Brad Jasper and Trevor Lohrbeer
   ====================================================================================================================================
@@ -15,6 +19,7 @@
      ImportJSONViaPost     For use by end users to import a JSON feed from a URL using POST parameters
      ImportJSONAdvanced    For use by script developers to easily extend the functionality of this library
      ImportJSONBasicAuth   For use by end users to import a JSON feed from a URL with HTTP Basic Auth (added by Karsten Lettow)
+     ImportJSONApiKey      For use by end users to import a JSON feed from a URL with an API key (added by Michael Voorhaen)
 
   For future enhancements see https://github.com/bradjasper/ImportJSON/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement
   
@@ -23,7 +28,6 @@
   ------------------------------------------------------------------------------------------------------------------------------------
   Changelog:
   
-  1.6.0 (June 2, 2019) Fixed null values (thanks @gdesmedt1)
   1.5.0  (January 11, 2019) Adds ability to include all headers in a fixed order even when no data is present for a given header in some or all rows.
   1.4.0  (July 23, 2017) Transfer project to Brad Jasper. Fixed off-by-one array bug. Fixed previous value bug. Added custom annotations. Added ImportJSONFromSheet and ImportJSONBasicAuth.
   1.3.0  Adds ability to import the text from a set of rows containing the text to parse. All cells are concatenated
@@ -33,6 +37,34 @@
   1.1.0  Added support for the noHeaders option
   1.0.0  Initial release
  *====================================================================================================================================*/
+
+/**
+ * @typedef {Object} AdvancedParameters
+ * @prop {string} [contentType] the content type (defaults to 'application/x-www-form-urlencoded')
+ * @prop {Record<string, string>} [headers]
+ * @prop {'get' | 'delete' | 'patch' | 'post' | 'put'} [method] defaults to get
+ * @prop {string | Blob | Object} [payload] the payload (that is, the POST body) for the request. Certain HTTP methods
+ * (for example, GET) do not accept a payload. It can be a string, a byte array, a blob, or a JavaScript object.
+ * A JavaScript object is interpreted as a map of form field names to values, where the values can be either strings or
+ * blobs.
+ * @prop {boolean} [validateHttpsCertificates]
+ * @prop {boolean} [followRedirects]
+ * @prop {boolean} [muteHttpExceptions]
+ * @prop {boolean} [escaping] If `false` reserved characters in the URL aren't escaped. The default is `true`.
+ * 
+ * @see https://developers.google.com/apps-script/reference/url-fetch/url-fetch-app#fetch(String,Object)
+ */
+
+/**
+ * @typedef {((query: string, path: string, options: any) => boolean) | undefined} IncludeFunc a function with the
+ * signature func(query, path, options) that returns true if the data element at the given path should be included or
+ * false otherwise.
+ * 
+ * @typedef {(data: any[][], row: number, column: number, options: any) => void} TransformFunc a function with the
+ * signature func(data, row, column, options) where data is a 2-dimensional array of the data and row & column are the
+ * current row and column being processed. Any return value is ignored. Note that row 0 contains the headers for the
+ * data, so test for row==0 to process headers only.
+ */
 
 /**
  * Imports a JSON feed and returns the results to be inserted into a Google Spreadsheet. The JSON feed is flattened to create 
@@ -191,7 +223,7 @@ function ImportJSONFromSheet(sheetName, query, options) {
  * Use the include and transformation functions to determine what to include in the import and how to transform the data after it is
  * imported. 
  *
- * For example:
+ * @example
  *
  *   ImportJSON("http://gdata.youtube.com/feeds/api/standardfeeds/most_popular?v=2&alt=json", 
  *              new Object() { "method" : "post", "payload" : "user=bob&apikey=xxxx" },
@@ -200,23 +232,22 @@ function ImportJSONFromSheet(sheetName, query, options) {
  *              function (query, path) { return path.indexOf(query) == 0; },
  *              function (data, row, column) { data[row][column] = data[row][column].toString().substr(0, 100); } )
  *
- * In this example, the import function checks to see if the path to the data being imported starts with the query. The transform 
- * function takes the data and truncates it. For more robust versions of these functions, see the internal code of this library.
+ * // In this example, the import function checks to see if the path to the data being imported starts with the query. The transform 
+ * // function takes the data and truncates it. For more robust versions of these functions, see the internal code of this library.
  *
- * @param {url}           the URL to a public JSON feed
- * @param {fetchOptions}  an object whose properties are options used to retrieve the JSON feed from the URL
- * @param {query}         the query passed to the include function
- * @param {parseOptions}  a comma-separated list of options that may alter processing of the data
- * @param {includeFunc}   a function with the signature func(query, path, options) that returns true if the data element at the given path
- *                        should be included or false otherwise. 
- * @param {transformFunc} a function with the signature func(data, row, column, options) where data is a 2-dimensional array of the data 
- *                        and row & column are the current row and column being processed. Any return value is ignored. Note that row 0 
- *                        contains the headers for the data, so test for row==0 to process headers only.
+ * @param {string} url the URL to a public JSON feed
+ * @param {AdvancedParameters} fetchOptions an object whose properties are options used to retrieve the JSON feed from
+ * the URL
+ * @param {any} query the query passed to the include function
+ * @param {string} parseOptions a comma-separated list of options that may alter processing of the data
+ * @param {IncludeFunc} includeFunc Function to filter paths to include. See typedef for details.
+ * @param {TransformFunc} transformFunc Function to process data. See typedef for details.
  *
  * @return a two-dimensional array containing the data, with the first row containing headers
  * @customfunction
  **/
 function ImportJSONAdvanced(url, fetchOptions, query, parseOptions, includeFunc, transformFunc) {
+  url += (url.split('?')[1] ? '&' : '?') + 'time=' + Date.now();
   var jsondata = UrlFetchApp.fetch(url, fetchOptions);
   var object   = JSON.parse(jsondata.getContentText());
   
@@ -249,6 +280,22 @@ function ImportJSONAdvanced(url, fetchOptions, query, parseOptions, includeFunc,
 function ImportJSONBasicAuth(url, username, password, query, parseOptions) {
   var encodedAuthInformation = Utilities.base64Encode(username + ":" + password);
   var header = {headers: {Authorization: "Basic " + encodedAuthInformation}};
+  return ImportJSONAdvanced(url, header, query, parseOptions, includeXPath_, defaultTransform_);
+}
+
+/**
+ * Imports a JSON feed that needs an API key and returns the results to be inserted into a Google Spreadsheet. The JSON
+ * feed is flattened to create a two-dimensional array. The first row contains the headers, with each column header
+ * indicating the path to that data in the JSON feed. The remaining rows contain the data.
+ * 
+ * @param {string} url
+ * @param {string} apiKey The API key to use. it's placed in the headers with the name "ApiKey"
+ * @param {string | string[]} query the query passed to the include function
+ * @param {string} parseOptions a comma-separated list of options that may alter processing of the data
+ * @returns {any[][]}
+ */
+function ImportJSONApiKey(url, apiKey, query, parseOptions) {
+  var header = {headers: {ApiKey: apiKey}};
   return ImportJSONAdvanced(url, header, query, parseOptions, includeXPath_, defaultTransform_);
 }
 
@@ -319,6 +366,11 @@ function AddOAuthService__(name, accessTokenUrl, requestTokenUrl, authorizationU
 
 /** 
  * Parses a JSON object and returns a two-dimensional array containing the data of that object.
+ * @param {any} object
+ * @param {string | string[]} query
+ * @param {string} options
+ * @param {IncludeFunc} includeFunc Function to filter paths to include. See typedef for details.
+ * @param {TransformFunc} transformFunc Function to process data. See typedef for details.
  */
 function parseJSONObject_(object, query, options, includeFunc, transformFunc) {
   var headers = new Array();
@@ -424,7 +476,7 @@ function parseHeaders_(headers, data) {
  */
 function transformData_(data, options, transformFunc) {
   for (var i = 0; i < data.length; i++) {
-    for (var j = 0; j < data[0].length; j++) {
+    for (var j = 0; j < data[i].length; j++) {
       transformFunc(data, i, j, options);
     }
   }
@@ -476,6 +528,12 @@ function applyXPathRule_(rule, path, options) {
   return path.indexOf(rule) == 0; 
 }
 
+/** Checks if the value is a valid iso date string as created by Date.prototype.toISOString or JSON.stringify */
+function isDate(value) {
+  const re = /^\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:?[0-5]\d|Z)$/;
+  return re.test(value);
+}
+
 /** 
  * By default, this function transforms the value at the given row & column so it looks more like a normal data import. Specifically:
  *
@@ -487,10 +545,11 @@ function applyXPathRule_(rule, path, options) {
  *
  * To change this behavior, pass in one of these values in the options parameter:
  *
- *    noInherit:     Don't inherit values from parent elements
- *    noTruncate:    Don't truncate values
- *    rawHeaders:    Don't prettify headers
- *    debugLocation: Prepend each value with the row & column it belongs in
+ *  - noInherit:     Don't inherit values from parent elements
+ *  - noTruncate:    Don't truncate values
+ *  - rawHeaders:    Don't prettify headers
+ *  - debugLocation: Prepend each value with the row & column it belongs in
+ *  - parseDates:    Detect dates and parse them
  */
 function defaultTransform_(data, row, column, options) {
   if (data[row][column] == null) {
@@ -516,6 +575,13 @@ function defaultTransform_(data, row, column, options) {
   if (hasOption_(options, "debugLocation")) {
     data[row][column] = "[" + row + "," + column + "]" + data[row][column];
   }
+
+  if (hasOption_(options, "parseDates")) {
+    if (data[row][column] && isDate(data[row][column])) {
+      data[row][column] = new Date(data[row][column]); 
+    }
+  }
+
 }
 
 /** 
@@ -632,3 +698,10 @@ function getDataFromNamedSheet_(sheetName) {
   Logger.log(jsonText);
   return JSON.parse(jsonText);
 }
+
+// module is for the unit tests, but isn't defined in google
+try {
+  module.exports = {
+    isDate,
+  }
+} catch (e) {}
