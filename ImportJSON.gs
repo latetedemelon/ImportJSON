@@ -217,12 +217,27 @@ function ImportJSONFromSheet(sheetName, query, options) {
  * @customfunction
  **/
 function ImportJSONAdvanced(url, fetchOptions, query, parseOptions, includeFunc, transformFunc) {
-  var jsondata = UrlFetchApp.fetch(url, fetchOptions);
-  var object   = JSON.parse(jsondata.getContentText());
-  
-  return parseJSONObject_(object, query, parseOptions, includeFunc, transformFunc);
-}
+  // Request json data in cache
+  var cache = CacheService.getPublicCache(); // using Cache service to prevent too many urlfetch 
+  var jsonData = cache.get(url);
 
+  // if no data in cache, request data via api
+  if (!jsonData) {
+    try {
+      var response = UrlFetchApp.fetch(url, fetchOptions)
+      if (response) {
+        jsonData = response.getContentText()
+        cache.put(url, jsonData, 900); // put result in cache during 15 minutes (900 seconds)
+      }
+      Logger.log("Data :\n" + jsonData)
+    }
+    catch(err) {
+      console.error(err.message)
+      // if (err.message == "Service invoked too many times for one day: urlfetch.") {
+      //   Logger.log("ok")
+      // }
+    }
+  }
 /**
  * Helper function to authenticate with basic auth informations using ImportJSONAdvanced
  *
