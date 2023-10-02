@@ -8,17 +8,28 @@ Import JSON from any URL directly into your Google Sheets. `ImportJSON.gs` adds 
 
 Here are all the functions available:
 
-| Function                |  Description                                                                      |
-|-------------------------|-----------------------------------------------------------------------------------|
-| **ImportJSON**          | For use by end users to import a JSON feed from a URL                             |
-| **ImportJSONFromSheet** | For use by end users to import JSON from one of the Sheets                        |
-| **ImportJSONViaPost**   | For use by end users to import a JSON feed from a URL using POST parameters       |
-| **ImportJSONBasicAuth** | For use by end users to import a JSON feed from a URL with HTTP Basic Auth        |
-| **ImportJSONAdvanced**  | For use by script developers to easily extend the functionality of this library   |
+| Function                |  Description                                                                                  |
+|-------------------------|-----------------------------------------------------------------------------------------------|
+| **ImportJSON**          | For use by end users to import a JSON feed from a URL                                         |
+| **ImportJSONWithPost**  | For use by end users to import a JSON feed from a URL using POST parameters                   |
+| **ImportJSONAdvanced**  | For use by script developers to easily extend the functionality of this library               |
+| **ParseJSON**           | For use by end users to import JSON data from string                                          |
+| **ParseJSONFromSheet**  | For use by end users to parse JSON from one of the Sheets                                     |
+| **ParseJSONAdvanced**   | For use by script developers to easily extend the json parsing functionality of this library  |
 
 Review `ImportJSON.gs` for more info on how to use these in detail.
 
 ## Version
+- v1.9.0 (October 6, 2021) Various xpath fixes, and rawJson output fix
+- v1.8.3 (October 6, 2021) Adding =ParseJSON() and ParseJSONAdvanced() helper method
+- v1.8.2 (October 6, 2021) Rename ImportJSONViaPost to ImportJSONWithPost
+- v1.8.1 (October 6, 2021) Remove ImportJSONBasicAuth, as URL can have basic auth info in it, and then use ImportJSON()
+- v1.8.0 (October 6, 2021) Adding "Update JSON cache" button to menu
+- v1.7.4 (October 6, 2021) Adding rawJson option
+- v1.7.3 (October 6, 2021) Return floats as floats
+- v1.7.2 (October 6, 2021) Ensuring xpath does not treat key as prefix
+- v1.7.1 (October 6, 2021) Adding retryFetch option
+- v1.7.0 (October 6, 2021) Renaming ImportJsonFromSheet to ParseJsonFromSheet
 - v1.6.0 (June 2, 2019) Fixed null values (thanks @gdesmedt1)
 - v1.5.0 (January 11, 2019) Adds ability to include all headers in a fixed order even when no data is present for a given header in some or all rows.
 - v1.4.0 (July 23, 2017) - Project transferred to Brad Jasper. Fixed off-by-one array bug. Fixed previous value bug. Added custom annotations. Added ImportJSONFromSheet and ImportJSONBasicAuth.
@@ -30,8 +41,8 @@ Review `ImportJSON.gs` for more info on how to use these in detail.
 - v1.0.0 - Initial release
 
 ## How can you help?
-- Found a bug? Report it! https://github.com/bradjasper/ImportJSON/issues
-- Want to contribute? Submit an <a href="https://github.com/bradjasper/ImportJSON/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement">enhancement</a>
+- Found a bug? Report it! https://github.com/joshcoales/ImportJSON/issues
+- Want to contribute? Submit an <a href="https://github.com/joshcoales/ImportJSON/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement">enhancement</a>
 
 ## Website archive
 This code base used to be hosted at http://blog.fastfedora.com/projects/import-json and contained a lot of useful information. It has been archived at https://rawgit.com/bradjasper/ImportJSON/master/archive/blog.fastfedora.com/projects/import-json.html
