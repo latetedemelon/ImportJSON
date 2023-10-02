@@ -67,9 +67,31 @@
  *
  * @return a two-dimensional array containing the data, with the first row containing headers
  **/
+
+/** Define a global variable for cache */
+var cache = CacheService.getScriptCache();
+function ImportJSON(url, query, options) {
+    // Generate a cache key based on the URL and query
+  var cacheKey = url + "-" + query;
+   // Try to get the cached data
+  var cachedData = cache.get(cacheKey);
+  if (cachedData) {
+    return JSON.parse(cachedData);
+  } else {
+    var result = ImportJSONAdvanced(url, null, query, parseOptions, includeXPath_, defaultTransform_);
+    // Cache the result for 30 minutes (1800000 milliseconds)
+    cache.put(cacheKey, JSON.stringify(result), 1800);
+    
+    return result;
+  }
+  /**return return ImportJSONAdvanced(url, null, query, parseOptions, includeXPath_, defaultTransform_);*/
+}
+
+/**
 function ImportJSON(url, query, parseOptions) {
   return ImportJSONAdvanced(url, null, query, parseOptions, includeXPath_, defaultTransform_);
-}
+} */
+
 
 /**
  * Imports a JSON feed via a POST request and returns the results to be inserted into a Google Spreadsheet. The JSON feed is 
@@ -217,10 +239,19 @@ function ImportJSONFromSheet(sheetName, query, options) {
  * @customfunction
  **/
 function ImportJSONAdvanced(url, fetchOptions, query, parseOptions, includeFunc, transformFunc) {
-  var jsondata = UrlFetchApp.fetch(url, fetchOptions);
-  var object   = JSON.parse(jsondata.getContentText());
+  var jsondata = cache.get(url);
+  if (jsondata == null) {
+    jsondata = UrlFetchApp.fetch(url);
+    cache.put(url, jsondata, 1800); // Cache for 30 minutes
+  }
+  var object = JSON.parse(jsondata.getContentText());
   
-  return parseJSONObject_(object, query, parseOptions, includeFunc, transformFunc);
+  return parseJSONObject_(object, query, options, includeFunc, transformFunc);
+
+  /**var jsondata = UrlFetchApp.fetch(url, fetchOptions);*/
+  /**var object   = JSON.parse(jsondata.getContentText());
+  
+  return parseJSONObject_(object, query, parseOptions, includeFunc, transformFunc);*/
 }
 
 /**
